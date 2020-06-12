@@ -197,72 +197,44 @@ function solarToLunar(year, month, day) {
     if (_checkYear(year) && _checkMonth(month) && _checkDay(day)) {
         const baseDate = new Date(minYear, 0, 31);      // 基础日期1900年1月31日
         const objDate = new Date(year, month - 1, day); // 目标日期
-        let offset = (objDate - baseDate) / 86400000;   // 偏移天数 60 * 60 * 24 * 1000 = 86400000，1天的毫秒数
-        let monCycle = 14;
+        let offset = parseInt((objDate - baseDate) / 86400000);   // 偏移天数 60 * 60 * 24 * 1000 = 86400000，1天的毫秒数
         let temp = 0;
         let i = 0;
 
         for (i = minYear; i < maxYear && offset > 0; i++) {
             temp = getLunarYearDaysCount(i);             // 农历year年的总天数
-            if (offset - temp < 0) {
+            if (offset < temp) {
                 break;
             } else {
                 offset -= temp;
             }
-            monCycle += 12;
         }
-
 
         const lunarYear = i;                             // 农历年份        
         const leap = getLunarLeapMonth(lunarYear);       // 当年闰月是哪个月
-        const isLeapYear = leap > 0 ? true : false;      // 当年是否有闰月        
         let isLeapMonth = false;                         // 当前农历月份是否是闰月
         for (i = 1; i <= 12 && offset > 0; i++) {
             if (leap > 0 && i == (leap + 1) && !isLeapMonth) {
                 --i;
                 isLeapMonth = true;
-                temp = getLeapMonthDaysCount(year);
+                temp = getLeapMonthDaysCount(lunarYear);
             } else {
-                temp = getLunarYearMonthDaysCount(year, i);
-            }
-
-            if (isLeapMonth && i == (leap + 1)) {
                 isLeapMonth = false;
+                temp = getLunarYearMonthDaysCount(lunarYear, i);
             }
 
-            offset -= temp;
-            if (!isLeapMonth) {
-                monCycle++;
-            }
-        }
-
-        if (offset == 0 && leap > 0 && i == leap + 1) {
-            if (isLeapMonth) {
-                isLeapMonth = false;
+            if (offset < temp) {
+                break;
             } else {
-                isLeapMonth = true;
-                --i;
-                --monCycle;
+                offset -= temp;
             }
-        }
-
-        if (offset < 0) {
-            offset += temp;
-            --i;
-            --monCycle;
         }
         const lunarMonth = i;        // 农历月份
         const lunarDay = offset + 1; // 农历日期
 
         let monthStr = '';
-        if (isLeapYear) {
-            if (lunarMonth < leap) {
-                monthStr = monthName[lunarMonth - 1];
-            } else if (lunarMonth == leap) {
-                monthStr = '闰' + monthName[lunarMonth - 1];
-            } else {
-                monthStr = monthName[lunarMonth - 2];
-            }
+        if (isLeapMonth) {
+            monthStr = '闰' + monthName[lunarMonth - 1];
         } else {
             monthStr = monthName[lunarMonth - 1];
         }
